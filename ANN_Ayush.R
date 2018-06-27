@@ -43,6 +43,21 @@ str(Dataset) #structure
 head(Dataset) # top5 values
 names(Dataset) # feature names
 
+# Histogram of all predictor variables
+library(purrr)
+library(tidyr)
+library(ggplot2)
+
+# operator passes the df output that results from the function right before the pipe to input 
+# it as the first argument of the function right after the pipe.
+
+Dataset %>% 
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+  facet_wrap(~ key, scales = "free") +
+  geom_histogram()
+
 # Range Scaling - using caret library 
 # (https://www.rdocumentation.org/packages/caret/versions/6.0-80/topics/preProcess)
 preprocessParam <- preProcess(Dataset[,-1], method=c("range")) # Dataset[,-1] if not scaling the response
@@ -144,7 +159,7 @@ test.rmse.nn
 test.aae.nn
 
 
-# --------------Plot----------------------------
+# --------------Plot-----------------------------------------
 
 library(NeuralNetTools)
 # windows();plotnet(final.model.nn)
@@ -152,11 +167,13 @@ library(NeuralNetTools)
 # names(final.model.nn)
 # final.model.nn # multiple parameters calculated for the Nueral Net. Options can be seen from 'names(final.model.nn)'
 
+names(final.model.nn)
+
 X1 = final.model.nn$fitted.values
 Y =  scaled.data$Norm365
 
 windows();plot(X1 ~ Y, pch = 1, xlab = "Observed Norm 365 Oil (bbl/ft)", ylab = "ANN Predicted Norm 365 Oil (bbl/ft)", xaxs ="i", yaxs ="i",
-     main = "ANN Model")
+     main = "ANN Model", xlim = c(0,40), ylim = c(0,40))
 legend("topleft", bty = "n", legend=paste("R2 = ", format(r.squared.nn,digits=4)))
 h = lm(X1 ~ Y) # Linear Model
 abline(h, col="blue", lwd = 2)
@@ -186,7 +203,7 @@ windows();qplot(Dataset$Bblsft,
 # MVA Prediction
 bblsft.data = read.csv(file.choose(), header = TRUE) # Import Input_PredictionDJ 
 bblsft.data
-names(bblsft.data)[1] = 'Bblsft' # Renaming the first column
+names(bblsft.data)[1] = 'Bblsft' # Renaming the column
 
 # Make sure column names match before using the predict method
 lin.values=predict(lin_model, newdata = bblsft.data)
@@ -195,11 +212,14 @@ bblsft.data$lin_predict <- lin.values
 
 # NeuralNetwork Prediction Model  - http://stat.ethz.ch/R-manual/R-patched/library/nnet/html/predict.nnet.html
 # Need to Normalize the data again before using as input in Neural Network model
-# preprocessParam <- preProcess(bblsft.data[,], method=c("scale")) # Dataset[,-1] if not scaling the response
-# normalized.data <- predict(preprocessParam, bblsft.data)
-# normalized.data
+preprocessParam <- preProcess(bblsft.data[,], method=c("scale")) # Dataset[,-1] if not scaling the response
+normalized.data <- predict(preprocessParam, bblsft.data)
+normalized.data
 
-ann.values = predict(final.model.nn, newdata=bblsft.data)
+#bblsft.data2 <- bblsft.data[,1] # Removing all the constant columns
+# 
+
+ann.values = predict(final.model.nn, newdata = normalized.data, linout=T,trace=TRUE)
 bblsft.data$ann_predict <- ann.values
 
 bblsft.data
@@ -207,11 +227,11 @@ bblsft.data
 
 # Change to the right axis and change ggplot style
 
-windows();ggplot(data=bblsft.data, aes(x=bblsft.data$lin_predict, y=bblsft.data$ann_predict)) +
+windows();ggplot(data=bblsft.data, aes(x=bblsft.data$Bblsft, y=bblsft.data$ann_predict)) +
   geom_line(linetype = "dashed", color = "red") +  
-  geom_point(shape=18, color="red")+
-  geom_smooth(method=lm, linetype="dashed", color="darkred", fill="blue")
+  geom_point(shape=18, color="green")
+  #geom_smooth(method=lm, linetype="dashed", color="darkred", fill="blue")
 
-#geom_smooth is for confidence interval window
+#geom_smooth is for smooth fit curve with confidence interval window
 
 
