@@ -10,7 +10,7 @@ cat("\014") # clear the console window
 rm(list = ls()) # removes existing objects from current workspace
 
 # Import data set
-Dataset_raw = read.csv(file.choose(), header = TRUE)
+Dataset_raw = read.csv(file.choose(), header = TRUE) # Import DJ_Dataset.csv
 dim(Dataset_raw) #dimensions - 339 x 8
 
 # Dataset = Dataset_raw[, -c(3,6)] #omitting some non-significant
@@ -31,7 +31,7 @@ names(Dataset)[5] = 'TVD'
 names(Dataset)[6] = 'BTUGas' 
 names(Dataset)[7] = 'NeutPor'
 names(Dataset)[8] = 'AvgRtNetPay' 
-
+# Better accuracy if BTUGas and AvgPPG are removed as predictors
 names(Dataset)
 
 library(ggcorrplot)
@@ -173,7 +173,7 @@ names(lin_model)
 colMeans(Dataset[sapply(Dataset, is.numeric)])
 summary(Dataset) # Basic statistics of the input variables
 #Histogram of Parameter of Interest -> Bbls/ft
-qplot(Dataset$Bblsft,
+windows();qplot(Dataset$Bblsft,
       geom="histogram",
       binwidth = 0.5,  
       main = "Histogram: Bbls/ft", 
@@ -184,27 +184,34 @@ qplot(Dataset$Bblsft,
 # Based on Histogram: Range of values for bbls/ft are 0-50
 
 # MVA Prediction
-bblsft.data = read.csv(file.choose(), header = TRUE)
+bblsft.data = read.csv(file.choose(), header = TRUE) # Import Input_PredictionDJ 
 bblsft.data
-
 names(bblsft.data)[1] = 'Bblsft' # Renaming the first column
+
 # Make sure column names match before using the predict method
-bblsft.values=predict(lin_model, newdata = bblsft.data)
-bblsft.values
-lin_predict = write.csv(bblsft.values, file="Output_PredictionDJ_Lin.csv", row.names = FALSE)
+lin.values=predict(lin_model, newdata = bblsft.data)
+bblsft.data$lin_predict <- lin.values
+# lin_predict = write.csv(lin.values, file="Output_PredictionDJ_Lin.csv", row.names = FALSE)
 
 # NeuralNetwork Prediction Model  - http://stat.ethz.ch/R-manual/R-patched/library/nnet/html/predict.nnet.html
-bblsft.data = read.csv(file.choose(), header = TRUE)
-names(bblsft.data)[1] = 'Bblsft'
-ann.values = predict(final.model.nn, newdata=bblsft.data,  linout=T) # Getting same Values!!
-ann_predict = write.csv(ann.values, file="Output_PredictionDJ_ANN.csv", row.names = FALSE)
+# Need to Normalize the data again before using as input in Neural Network model
+# preprocessParam <- preProcess(bblsft.data[,], method=c("scale")) # Dataset[,-1] if not scaling the response
+# normalized.data <- predict(preprocessParam, bblsft.data)
+# normalized.data
 
+ann.values = predict(final.model.nn, newdata=bblsft.data)
+bblsft.data$ann_predict <- ann.values
+
+bblsft.data
+# ann_predict = write.csv(ann.values, file="Output_PredictionDJ_ANN.csv", row.names = FALSE)
 
 # Change to the right axis and change ggplot style
-compare = read.csv(file.choose(), header = TRUE)
-names(compare)
-ggplot(data=compare, aes(x=compare$ï..LinModel, y=compare$ANN)) +
+
+windows();ggplot(data=bblsft.data, aes(x=bblsft.data$lin_predict, y=bblsft.data$ann_predict)) +
   geom_line(linetype = "dashed", color = "red") +  
-  geom_point(shape=18, color="red")
+  geom_point(shape=18, color="red")+
+  geom_smooth(method=lm, linetype="dashed", color="darkred", fill="blue")
+
+#geom_smooth is for confidence interval window
 
 
