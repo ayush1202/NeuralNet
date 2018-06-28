@@ -63,8 +63,17 @@ Dataset %>%
 # Combining the 'scale' and 'center' transforms will standardize your data. 
 # Attributes will have a mean value of 0 and a standard deviation of 1.
 # (https://www.rdocumentation.org/packages/caret/versions/6.0-80/topics/preProcess)
-preprocessParam <- preProcess(Dataset[,-1], method=c("center","scale")) # Dataset[,-1] if not scaling the response
-scaled.data <- predict(preprocessParam, Dataset)
+# preprocessParam <- preProcess(Dataset[,-1], method=c("center","scale")) # Dataset[,-1] if not scaling the response
+# scaled.data <- predict(preprocessParam, Dataset)
+# head(scaled.data)
+
+range.scale = function(x)
+{
+  (x - min(x)) / (max(x) - min(x))
+}
+
+scaled.data	= Dataset
+scaled.data[,-1] = apply(Dataset[,-1], MARGIN = 2, FUN = range.scale)
 head(scaled.data)
 
 set.seed(1234) # starting point in generation of sequence of random numbers
@@ -202,36 +211,54 @@ windows();qplot(Dataset$Bblsft,
 
 # MVA Prediction
 # the input prediction file has each variable scaled: value-min/(max-min)
-bblsft.data = read.csv(file.choose(), header = TRUE) # Import Input_PredictionDJ_EL.csv
-bblsft.data
-names(bblsft.data)[1] = 'Bblsft' # Renaming the column
+# bblsft.data = read.csv(file.choose(), header = TRUE) # Import Input_PredictionDJ_EL.csv
+# bblsft.data
+# names(bblsft.data)[1] = 'Bblsft' # Renaming the column
+ 
+
+# scaled.data2 <- predict(preprocessParam, bblsft.data)
+# head(scaled.data2)
 
 
-scaled.data2 <- predict(preprocessParam, bblsft.data)
-head(scaled.data2)
 
 
+# # Make sure column names match before using the predict method
+# lin_predict=predict(lin_model, newdata = bblsft.data)
+# bblsft.data$lin_predict <- lin_predict
 
+# ann_predict = predict(final.model.nn, newdata = scaled.data2)
+# bblsft.data$ann_predict <- ann_predict
+# bblsft.data
 
-# Make sure column names match before using the predict method
-lin_predict=predict(lin_model, newdata = bblsft.data)
-bblsft.data$lin_predict <- lin_predict
-
-ann_predict = predict(final.model.nn, newdata = scaled.data2)
-bblsft.data$ann_predict <- ann_predict
-
-bblsft.data
 # ann_predict = write.csv(ann.values, file="Output_PredictionDJ_ANN.csv", row.names = FALSE)
+
+source("OPAAT_sensitivity.R")
+# the datafile here should have Norm365(Target variable) as the first column
+df <- OPAAT_sensitivity(Dataset, lin_model) # sensitivity for Linear Model
+df2 <- OPAAT_sensitivity(scaled.data, final.model.nn) # sensitivity for Linear Model
+
+# Re-scale the odd columns before plotting in the next step
+
 
 # Prediction Comparison
 windows();
 ggplot()+
-  geom_line(data = bblsft.data, aes(x = bblsft.data$Bblsft, y = bblsft.data$lin_predict), color = "blue", size = 1)+
-  geom_line(data = bblsft.data, aes(x = bblsft.data$Bblsft, y = bblsft.data$ann_predict), color = "red", size = 1)+
+  geom_line(data = df, aes(x = df$Bblsft, y = df$Bblsft), color = "blue", size = 1)+
+  geom_line(data = df2, aes(x = df$Bblsft, y = df2$`Bblsft  Response`), color = "red", size = 1)+
   xlab('Bbls/ft')+
   ylab('Prediction')
 
+# par(mfrow = c(2,4))
+# 
+# for (i in 1:nrow(df)){
+#   x = df[,i]
+#   y = df[,i+1]
+#   plot(x,y)
+# }
 
+par(mfrow = c(1,1))
+
+x = df2[,1]
+y = df2[,2]
+plot(x,y)
 #_---------------------------
-source("OPAAT_sensitivity.R")
-df <- OPAAT_sensitivity(scaled.data, final.model.nn)
