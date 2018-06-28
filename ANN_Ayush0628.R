@@ -239,13 +239,13 @@ df2 <- OPAAT_sensitivity(scaled.data, final.model.nn) # sensitivity for Linear M
 
 # Re-scale the odd columns before plotting in the next step
 
-
 # Prediction Comparison
+# Need a  loop to plot each variable along with its subsequent prediction value
 windows();
 ggplot()+
-  geom_line(data = df, aes(x = df$Bblsft, y = df$Bblsft), color = "blue", size = 1)+
-  geom_line(data = df2, aes(x = df$Bblsft, y = df2$`Bblsft  Response`), color = "red", size = 1)+
-  xlab('Bbls/ft')+
+  geom_line(data = df, aes(x = df$AdjWC365, y = df$`AdjWC365  Response`), color = "blue", size = 1)+
+  geom_line(data = df2, aes(x = df$AdjWC365, y = df2$`AdjWC365  Response`), color = "red", size = 1)+
+  xlab('AdjWC365')+
   ylab('Prediction')
 
 # par(mfrow = c(2,4))
@@ -256,9 +256,13 @@ ggplot()+
 #   plot(x,y)
 # }
 
-par(mfrow = c(1,1))
-
-x = df2[,1]
-y = df2[,2]
-plot(x,y)
+par(mfrow = c(2,4))
+for (i in 1:length(df2)){
+  x = df2[,i]
+  y = df2[,i+1]
+  windows();
+  ggplot(data=df2, aes(x=x, y=y, group=1)) +
+  geom_line(color="red")+
+  geom_point()
+  }
 #_---------------------------
