@@ -6,6 +6,10 @@
 # install.packages("RRF")
 # install.packages("NeuralNetTools")
 
+library(ggcorrplot)
+library(caret)
+library(mlbench)
+
 cat("\014") # clear the console window
 rm(list = ls()) # removes existing objects from current workspace
 
@@ -31,12 +35,7 @@ names(Dataset)[5] = 'TVD'
 names(Dataset)[6] = 'BTUGas' 
 names(Dataset)[7] = 'NeutPor'
 names(Dataset)[8] = 'AvgRtNetPay' 
-
-names(Dataset)
-
-library(ggcorrplot)
-library(caret)
-library(mlbench)
+names(Dataset) # Check the names after renaming
 
 # ------------------Variable Importance/Feature Selection-----------------
 
@@ -101,3 +100,48 @@ p + theme(axis.text.x=element_blank(),
 
 # --------------------------------------------------------------
 
+# PCA and Analysis 
+
+# install.packages("FactoMineR")
+library(FactoMineR)
+library("devtools")
+# install_github("kassambara/factoextra")
+library(factoextra)
+summary(Dataset)
+
+# install.packages("corrplot")
+library(corrplot)
+cor.mat <- round(cor(Dataset),2)
+corrplot(cor.mat, type="upper", order="hclust", 
+         tl.col="black", tl.srt=45)
+
+# install.packages("PerformanceAnalytics")
+library("PerformanceAnalytics")
+chart.Correlation(Dataset, histogram=TRUE, pch=19)
+# Distribution shown on the diagonal, bivariate scatter plots on bottom
+# Value of correlation and significance levels
+# Each significance level is associated to a symbol : 
+# p-values(0, 0.001, 0.01, 0.05, 0.1, 1) <=> symbols("***", "**", "*", ".", " ")
+
+# PCA 
+PCA_results = PCA(Dataset, scale.unit = TRUE, ncp = 5, graph = TRUE)
+print(PCA_results) #also prints individual and variables factor map
+
+# Eigenvalues correspond to the amount of the variation explained by each principal component (PC)
+eigenvalues <- PCA_results$eig
+head(eigenvalues[, 1:2]) # taking the eigenvalue and percent of variance into account
+
+# Printing the bar plot
+barplot(eigenvalues[, 2], names.arg=1:nrow(eigenvalues), 
+        main = "Variances",
+        xlab = "Principal Components",
+        ylab = "Percentage of variances",
+        col ="steelblue")
+# Add connected line segments to the plot
+lines(x = 1:nrow(eigenvalues), eigenvalues[, 2], 
+      type="b", pch=19, col = "red")
+
+# Scree Plot
+fviz_screeplot(PCA_results, ncp=10)
+
+# ---------------------------------------------------------------------
