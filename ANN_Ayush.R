@@ -5,9 +5,20 @@
 # install.packages("mlbench")
 # install.packages("RRF")
 # install.packages("NeuralNetTools")
+# install.packages("plotly")
+# install.packages("nnet")
 
 cat("\014") # clear the console window
 rm(list = ls()) # removes existing objects from current workspace
+
+library(ggcorrplot)
+library(caret)
+library(mlbench)
+library(purrr)
+library(tidyr)
+library(ggplot2)
+library(nnet)
+library(NeuralNetTools)
 
 # Import data set
 Dataset_raw = read.csv(file.choose(), header = TRUE) # Import DJ_Dataset.csv
@@ -21,8 +32,8 @@ dim(Dataset) #dimensions
 names(Dataset) # feature names
 
 # Rename the columns
-
 # **Note: if any columns are removed from here, make sure the index number is correct
+# Better accuracy if BTUGas and AvgPPG are removed as predictors
 names(Dataset)[1] = 'Norm365' 
 names(Dataset)[2] = 'Bblsft' 
 names(Dataset)[3] = 'AvgPPG' 
@@ -31,23 +42,14 @@ names(Dataset)[5] = 'TVD'
 names(Dataset)[6] = 'BTUGas' 
 names(Dataset)[7] = 'NeutPor'
 names(Dataset)[8] = 'AvgRtNetPay' 
-# Better accuracy if BTUGas and AvgPPG are removed as predictors
-names(Dataset)
 
-library(ggcorrplot)
-library(caret)
-library(mlbench)
+names(Dataset)
 
 dim(Dataset) #dimensions
 str(Dataset) #structure
 head(Dataset) # top5 values
-names(Dataset) # feature names
 
 # Histogram of all predictor variables
-library(purrr)
-library(tidyr)
-library(ggplot2)
-
 # operator passes the df output that results from the function right before the pipe to input 
 # it as the first argument of the function right after the pipe.
 
@@ -58,14 +60,12 @@ Dataset %>%
   facet_wrap(~ key, scales = "free") +
   geom_histogram()
 
-# Range Scaling - using caret library 
+# Combining the 'scale' and 'center' transforms will standardize your data. 
+# Attributes will have a mean value of 0 and a standard deviation of 1.
 # (https://www.rdocumentation.org/packages/caret/versions/6.0-80/topics/preProcess)
-preprocessParam <- preProcess(Dataset[,-1], method=c("range")) # Dataset[,-1] if not scaling the response
+preprocessParam <- preProcess(Dataset[,-1], method=c("center","scale")) # Dataset[,-1] if not scaling the response
 scaled.data <- predict(preprocessParam, Dataset)
 head(scaled.data)
-
-# install.packages("nnet")
-library(nnet)
 
 set.seed(1234) # starting point in generation of sequence of random numbers
 #expand.grid: create a dataframe from all combinations of supplied vectors
@@ -161,11 +161,11 @@ test.aae.nn
 
 # --------------Plot-----------------------------------------
 
-library(NeuralNetTools)
+
 # windows();plotnet(final.model.nn)
 # summary(final.model.nn)
 # names(final.model.nn)
-# final.model.nn # multiple parameters calculated for the Nueral Net. Options can be seen from 'names(final.model.nn)'
+# final.model.nn # multiple parameters calculated for the Neural Net. Options can be seen from 'names(final.model.nn)'
 
 names(final.model.nn)
 
@@ -227,7 +227,6 @@ bblsft.data
 # ann_predict = write.csv(ann.values, file="Output_PredictionDJ_ANN.csv", row.names = FALSE)
 
 # Change to the right axis and change ggplot style
-
 windows();ggplot(data=bblsft.data, aes(x=bblsft.data$Bblsft, y=bblsft.data$ann_predict)) +
   geom_line(linetype = "dashed", color = "red") +  
   geom_point(shape=18, color="green")
