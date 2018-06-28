@@ -201,7 +201,8 @@ windows();qplot(Dataset$Bblsft,
 # Based on Histogram: Range of values for bbls/ft are 0-50
 
 # MVA Prediction
-bblsft.data = read.csv(file.choose(), header = TRUE) # Import Input_PredictionDJ 
+# the input prediction file has each variable scaled: value-min/(max-min)
+bblsft.data = read.csv(file.choose(), header = TRUE) # Import Input_PredictionDJ_EL.csv
 bblsft.data
 names(bblsft.data)[1] = 'Bblsft' # Renaming the column
 
